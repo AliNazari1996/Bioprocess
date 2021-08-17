@@ -5,7 +5,6 @@ from biosteam import main_flowsheet, settings, units, Stream
 settings.set_thermo(chemicals)
 s1 = Stream('feed',Water=1.20e+05,Glucose=1.89e+03,Sucrose=2.14e+04,DryYeast=1.03e+04,units='kg/hr',T=32+273.15)
 
-
 # Stream one definition (stream assignment)
 #s1.vle(P=101325, V=0.75), Vapour fraction indication at a certain Pressure.
 # In stream function is adjustable (Pressure Temperature, Mole flows)
@@ -41,6 +40,3 @@ S1.show()
 
 main_flowsheet.diagram(kind='cluster', file='ABC.png')              #flowsheet display function.
 
-
-
-# Tear stream assessment:
