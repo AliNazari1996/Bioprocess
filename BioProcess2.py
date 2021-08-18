@@ -2,7 +2,6 @@ import biosteam as bst
 from biosteam import units
 
 bst.settings.set_thermo(['Water', 'Methanol'])
-
 feed = bst.Stream('feed', Methanol=100, Water=450)
 
 M1 = units.Mixer('M1',ins=feed)
