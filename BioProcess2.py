@@ -1,8 +1,43 @@
 import biosteam as bst
 from biosteam import units
+from biorefineries.lipidcane import chemicals
+def Vector_extract(Mass_flow):
 
-bst.settings.set_thermo(['Water', 'Methanol'])
-feed = bst.Stream('feed', Methanol=100, Water=450)
+    LIST = []
+    LIST_extract = ['' for x in range(len(Mass_flow))]
+
+    for i in range(len(Mass_flow)):
+        LIST.append(str(Mass_flow[i]))
+
+    ENGAGE = 1
+
+    for k in range(len(LIST)):
+        for i in LIST[k]:
+            for j in i:
+                if j == ' ':
+                    ENGAGE = ENGAGE * (-1)
+                if ENGAGE == -1:
+                    LIST_extract[k] = str(LIST_extract[k]) + j
+
+    Mass_flow_extract = [0 for x in range(len(Mass_flow))]
+    for i in range(len(LIST_extract)):
+        Mass_flow_extract[i] = float(LIST_extract[i][1:len(LIST_extract[i])])
+
+    return Mass_flow_extract
+
+bst.settings.set_thermo(['Water', 'Methanol','OleicAcid','Methyl oleate'])
+bst.settings.set_thermo(chemicals)
+feed = bst.Stream('feed', Methanol=100, Water=450,OleicAcid=1,Biodiesel=1)
+
+Mole_Flows = feed.imol['Water', 'Methanol','OleicAcid','Biodiesel']
+Mass_flow = Vector_extract(feed.imass['Water', 'Methanol','OleicAcid','Biodiesel'])
+Volumetric_flow = Vector_extract(feed.ivol['Water', 'Methanol','OleicAcid','Biodiesel'])
+
+
+print(Mole_Flows)
+print(Mass_flow)
+
+
 
 M1 = units.Mixer('M1',ins=feed)
 F1 = units.Flash('F1', V=0.5, P=101325)
