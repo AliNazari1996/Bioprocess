@@ -33,24 +33,26 @@ def CSTR_REACTOR(ID,inflow,Volume):
     T = inflow.T
     P = inflow.P
     Phase = inflow.phase
+    rho = inflow.rho
 
-    if sum(Mass_flow) ==0:
-        rho = 1
-        tau = 0
-
-    if sum(Mass_flow) !=0:
-        rho = inflow.rho
-        Phi_tot = sum(Mass_flow) / rho
-        tau = Volume / Phi_tot
+    Phi_tot = sum(Mass_flow)/rho
+    tau = Volume/Phi_tot
 
     # First order reaction kinetics for a continuously ideally stirred tank reactor. [CISTR(1,0)]
-    # A k = 10^(-2) is assumed. (WARNING: Artificial kinetics)
+    # k = 10^(-1) is assumed. (WARNING: Artificial kinetics)
 
     K = 10**(-1)
     Conv = K*tau /(1+(K*tau))
 
     outflow = Stream('OUTFLOW',OleicAcid=Mole_Flows[0]*(1-Conv),Methanol=Mole_Flows[0]*(1-Conv),Water=Mole_Flows[0]*Conv,Biodiesel=Mole_Flows[0]*Conv,T=T,P=P)
+    U = Unit(ID=ID, ins=inflow, outs=outflow)
+    U.show()
     return outflow
+
+def adjust_s2_flow():
+    s2.imol['Methanol']= s1.F_mol            # VARIABLE parameter = Specification
+    M1._run()                                # Only runs the mass and energy balances around this
+    M1.specification = adjust_s2_flow        # Specification related to M1
 
 # Oleic acid + methanol --> water + Methyl oleate (Reaction pathway)
 
@@ -60,37 +62,31 @@ settings.set_thermo(chemicals)
 # Methyl oleate = Biodiesel
 
 s1 = Stream('s1',OleicAcid=100, Methanol=0, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
-s2 = Stream('s2',OleicAcid=0, Methanol=100, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
+s2 = Stream('s2',OleicAcid=0, Methanol=50, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
 
 s1.show()
 s2.show()
 
 M1 = units.Mixer('M1', ins=(s1, s2), outs='s3')
 
+adjust_s2_flow() # The spec function is called after the unit definition.
+
+
+M1.simulate()
 M1 = main_flowsheet('M1')
 M1.show()
 
 feed = M1.outs[0]
 
-ID = 'RRR'
+ID = 'R1'
 V = 100 # m^3
+feed = CSTR_REACTOR(ID,feed,V)
+feed.show()
 
-outflow = CSTR_REACTOR(ID,feed,V)
-RRR = Unit(ID =ID,ins=feed, outs=outflow)
-RRR.show()
+F1 = units.Flash('F1', ins=feed, P=101325,T=400)
+F1.simulate()
+F1 = main_flowsheet('F1')
+F1.show()
 
-
-F1 = units.Flash('F1', ins=outflow,T=400, P=101325)
 main_flowsheet.diagram(kind='cluster', file='ABC.png')
-
-[s1, s2] - M1
-M1-RRR
-RRR-F1
-
-sys = System('sys', path=(M1, RRR, F1))
-
-sys.simulate()
-sys.show()
-
-
 

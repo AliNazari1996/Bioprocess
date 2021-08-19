@@ -45,7 +45,6 @@ settings.set_thermo(['Benzoic acid','ethanol','ethyl benzoate','water'], cache=T
 
 print('ALOHA')
 
-
 s1 = Stream('s1',Water=1.20e+05,Glucose=1.89e+03,Sucrose=2.14e+04,DryYeast=1.03e+04,units='kmol/hr',T=32+273.15)
 
 #s1.vle(P=101325, V=0.75), Vapour fraction indication at a certain Pressure. Also (lle & sle)
