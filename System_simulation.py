@@ -33,10 +33,15 @@ def CSTR_REACTOR(ID,inflow,Volume):
     T = inflow.T
     P = inflow.P
     Phase = inflow.phase
-    rho = inflow.rho
 
-    Phi_tot = sum(Mass_flow)/rho
-    tau = Volume/Phi_tot
+    if sum(Mass_flow) ==0:
+        rho = 1
+        tau = 0
+
+    if sum(Mass_flow) !=0:
+        rho = inflow.rho
+        Phi_tot = sum(Mass_flow) / rho
+        tau = Volume / Phi_tot
 
     # First order reaction kinetics for a continuously ideally stirred tank reactor. [CISTR(1,0)]
     # A k = 10^(-2) is assumed. (WARNING: Artificial kinetics)
@@ -45,8 +50,6 @@ def CSTR_REACTOR(ID,inflow,Volume):
     Conv = K*tau /(1+(K*tau))
 
     outflow = Stream('OUTFLOW',OleicAcid=Mole_Flows[0]*(1-Conv),Methanol=Mole_Flows[0]*(1-Conv),Water=Mole_Flows[0]*Conv,Biodiesel=Mole_Flows[0]*Conv,T=T,P=P)
-    U = Unit(ID=ID, ins=inflow, outs=outflow)
-    U.show()
     return outflow
 
 # Oleic acid + methanol --> water + Methyl oleate (Reaction pathway)
@@ -63,24 +66,35 @@ s1.show()
 s2.show()
 
 M1 = units.Mixer('M1', ins=(s1, s2), outs='s3')
-M1.simulate()
+
 M1 = main_flowsheet('M1')
 M1.show()
 
 feed = M1.outs[0]
 
-ID = 'R1'
+ID = 'RRR'
 V = 100 # m^3
-feed = CSTR_REACTOR(ID,feed,V)
 
-feed.show()
-print('AAA')
-F1 = units.Flash('F1', ins=feed,T=400, P=101325)
-F1.simulate()
-F1 = main_flowsheet('F1')
-F1.show()
+outflow = CSTR_REACTOR(ID,feed,V)
+RRR = Unit(ID =ID,ins=feed, outs=outflow)
+RRR.show()
+
+
+F1 = units.Flash('F1', ins=outflow,T=400, P=101325)
+
+
+
 
 main_flowsheet.diagram(kind='cluster', file='ABC.png')
+
+[s1, s2] - M1
+M1-RRR
+RRR-F1
+
+sys = System('sys', path=(M1, RRR, F1))
+
+sys.simulate()
+sys.show()
 
 
 
