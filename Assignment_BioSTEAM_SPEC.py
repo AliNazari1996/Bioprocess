@@ -1,4 +1,5 @@
 from biorefineries.lipidcane import chemicals
+from biosteam.process_tools import BoundedNumericalSpecification
 from biosteam import main_flowsheet, settings, units, Stream, System, Unit
 
 def Vector_extract(Mass_flow):
@@ -48,7 +49,6 @@ def CSTR_REACTOR(ID,inflow,Volume):
     U = Unit(ID=ID, ins=inflow, outs=outflow)
     U.show()
     return outflow
-
 def adjust_s2_flow():
     s2.imol['Methanol']= s1.F_mol            # VARIABLE parameter = Specification
     M1._run()                                # Only runs the mass and energy balances around this
@@ -71,19 +71,26 @@ M1 = units.Mixer('M1', ins=(s1, s2), outs='s3')
 
 adjust_s2_flow() # The spec function is called after the unit definition.
 
-
 M1.simulate()
 M1 = main_flowsheet('M1')
 M1.show()
 
 feed = M1.outs[0]
-
 ID = 'R1'
 V = 100 # m^3
 feed = CSTR_REACTOR(ID,feed,V)
 feed.show()
 
+def f(T):
+    F1.T = T
+    F1._run()
+    liquid = F1.outs[1]
+    RES = liquid.imol['Methanol']
+    return  RES - 0.5
+
 F1 = units.Flash('F1', ins=feed, P=101325,T=400)
+F1.specification = BoundedNumericalSpecification(f, 300, 500) # reducing the methanol in the upgraded fuel.
+
 F1.simulate()
 F1 = main_flowsheet('F1')
 F1.show()
