@@ -103,7 +103,7 @@ adjust_s2_flow() #The spec function is called after the unit definition.
 
 R1 = CISTR('R1', ins=M1.outs[0] ,Vol=100)
 
-#R1.simulate()
+#R1.simulate())
 #R1.show()
 
 F1 = units.Flash('F1', ins=R1.outs[0], P=101325,T=441)

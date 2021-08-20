@@ -107,7 +107,7 @@ R1.simulate()
 R1.show()
 
 F1 = units.Flash('F1', ins=R1.outs[0], P=101325,T=400)
-F1.specification = BoundedNumericalSpecification(f, 300, 500) # reducing the methanol in the upgraded fuel.
+F1.specification = BoundedNumericalSpecification(f, 300, 500) # reducing the methanol in the upgraded fuel!
 
 F1.simulate()
 F1.show()
