@@ -129,6 +129,7 @@ settings.set_thermo(['OleicAcid','Methanol','Water','Methyl oleate'])
 settings.set_thermo(chemicals)
 s1 = Stream('s1',OleicAcid=100, Methanol=100, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
 CCC = CISTR('c1', ins=s1 ,Vol=100,)
+CCC.simulate()
 CCC.show()
 
 
