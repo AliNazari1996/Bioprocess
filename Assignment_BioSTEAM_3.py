@@ -4,6 +4,7 @@ from biosteam import main_flowsheet, settings, units, Stream, System, Unit
 import biosteam as bst
 
 # How to incorporate the defined functions to operate on the intermediate variable ms ?
+
 class CISTR(bst.Unit):
     """
     Creates a CSTR reactor that calculates the conversion according to a specific first order
@@ -75,16 +76,50 @@ class CISTR(bst.Unit):
         Conv = K * tau / (1 + (K * tau))
 
         self.outs[0] = bst.Stream('OUTFLOW', OleicAcid=Mole_Flows[0] * (1 - Conv), Methanol=Mole_Flows[0] * (1 - Conv),Water=Mole_Flows[0] * Conv, Biodiesel=Mole_Flows[0] * Conv, T=T, P=P)
+def adjust_s2_flow():
+    s2.imol['Methanol']= s1.F_mol            # VARIABLE parameter = Specification
+    M1._run()                                # Runs the mass and energy balances around this
+    M1.specification = adjust_s2_flow        # Specification related to M1
+def f(T):
+    F1.T = T
+    F1._run()
+    liquid = F1.outs[1]
+    RES = liquid.imol['Methanol']
+    return  RES - 0.5
 
+# Oleic acid + methanol --> water + Methyl oleate (Reaction pathway)
+# Methyl oleate = Biodiesel
 
 settings.set_thermo(['OleicAcid','Methanol','Water','Methyl oleate'])
 settings.set_thermo(chemicals)
-s1 = Stream('s1',OleicAcid=100, Methanol=100, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
-CCC = CISTR('c1', ins=s1 ,Vol=100,)
-CCC.simulate()
-CCC.show()
 
+s1 = Stream('s1',OleicAcid=100, Methanol=0, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
+s2 = Stream('s2',OleicAcid=0, Methanol=50, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
 
+M1 = units.Mixer('M1', ins=(s1, s2), outs='s3')
+adjust_s2_flow() #The spec function is called after the unit definition.
 
+#M1.simulate()
+
+R1 = CISTR('R1', ins=M1.outs[0] ,Vol=100)
+
+#R1.simulate()
+#R1.show()
+
+F1 = units.Flash('F1', ins=R1.outs[0], P=101325,T=441)
+F1.specification = BoundedNumericalSpecification(f, 300, 500) # reducing the methanol in the upgraded fuel.
+
+#F1.simulate()
+#F1.show()
+
+[s1,s2]-M1
+M1-R1
+R1-F1
+
+#[s1,s2]-M1-R1-F1;
+
+sys = bst.System('sys', path=(M1, R1, F1))
+sys.simulate()
+sys.show()
 
 
