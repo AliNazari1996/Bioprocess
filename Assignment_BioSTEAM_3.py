@@ -23,6 +23,9 @@ class CISTR(bst.Unit):
     """
     _N_ins = 1
     _N_outs = 1                                                          #Gas phase and liquid phase outlets
+    _outs_size_is_fixed = True
+    _ins_size_is_fixed = True
+
     #_N_heat_utilities = 1
     _units = {'Conversion': '%'}
 
@@ -33,7 +36,9 @@ class CISTR(bst.Unit):
 
     def _setup(self):
         super()._setup()
-        outlet = self.outs[0]
+
+    def _cost(self):
+        super()._cost
 
     def _run(self):
 
@@ -74,8 +79,14 @@ class CISTR(bst.Unit):
 
         K = 10 ** (-1)
         Conv = K * tau / (1 + (K * tau))
+        self.outs[0] = bst.Stream(OleicAcid=Mole_Flows[0] * (1 - Conv), Methanol=Mole_Flows[0] * (1 - Conv),
+                                  Water=Mole_Flows[0] * Conv, Biodiesel=Mole_Flows[0] * Conv, T=T, P=P)
 
-        self.outs[0] = bst.Stream('OUTFLOW', OleicAcid=Mole_Flows[0] * (1 - Conv), Methanol=Mole_Flows[0] * (1 - Conv),Water=Mole_Flows[0] * Conv, Biodiesel=Mole_Flows[0] * Conv, T=T, P=P)
+
+
+
+
+
 def adjust_s2_flow():
     s2.imol['Methanol']= s1.F_mol            # VARIABLE parameter = Specification
     M1._run()                                # Runs the mass and energy balances around this
@@ -96,30 +107,29 @@ settings.set_thermo(chemicals)
 s1 = Stream('s1',OleicAcid=100, Methanol=0, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
 s2 = Stream('s2',OleicAcid=0, Methanol=50, Water =0, Biodiesel=0, units='kmol/hr',T=350, phase='l')
 
-M1 = units.Mixer('M1', ins=(s1, s2), outs='s3')
+M1 = units.Mixer('M1', outs='s3')
+
+M1.show()
 adjust_s2_flow() #The spec function is called after the unit definition.
 
-#M1.simulate()
+R1 = CISTR(ID='R1',Vol=100)
 
-R1 = CISTR('R1', ins=M1.outs[0] ,Vol=100)
 
-#R1.simulate())
+print('A')
+print(R1.ins)
+
 #R1.show()
 
-F1 = units.Flash('F1', ins=R1.outs[0], P=101325,T=441)
-F1.specification = BoundedNumericalSpecification(f, 300, 500) # reducing the methanol in the upgraded fuel.
+F1 = units.Flash('F1', P=101325,T=350)
+#F1.specification = BoundedNumericalSpecification(f, 350, 480) # reducing the methanol in the upgraded fuel.
 
-#F1.simulate()
-#F1.show()
 
-[s1,s2]-M1
-M1-R1
-R1-F1
+[s1, s2]-M1-R1-F1
 
-#[s1,s2]-M1-R1-F1;
+flowsheet_sys = bst.main_flowsheet.create_system('flowsheet_sys')
 
-sys = bst.System('sys', path=(M1, R1, F1))
+bst.main_flowsheet.diagram(kind='cluster', file='FlowSheet1.png')
+sys = bst.System('sys', path=[M1,R1,F1],recycle=None, N_runs=10)
 sys.simulate()
 sys.show()
-
-
+bst.main_flowsheet.diagram(kind='cluster', file='FlowSheet2.png')
